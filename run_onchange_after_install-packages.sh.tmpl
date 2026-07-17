@@ -1,28 +1,50 @@
 #!/bin/bash
 # Installs packages from .chezmoidata/packages.yaml.
 # run_onchange_: reruns on `chezmoi apply` whenever rendered content changes.
-set -euo pipefail
+#
+# Sections are independent: a failure in one (or in a single package) is
+# logged and does not stop the others. Exits non-zero if anything failed.
+set -uo pipefail
 
-echo "== apt =="
-sudo apt update
-sudo apt install --yes \
+FAILURES=()
+
+install_apt() {
+    echo "== apt =="
+    sudo apt update || { FAILURES+=("apt update"); return; }
+    sudo apt install --yes \
 {{- range .packages.apt }}
-    {{ . }} \
+        {{ . }} \
 {{- end }}
-    ;
+        || FAILURES+=("apt install")
+}
 
-echo "== snap =="
+install_snap() {
+    echo "== snap =="
 {{- range .packages.snap }}
-sudo snap install {{ .name }}{{ if index . "classic" }} --classic{{ end }}
+    sudo snap install {{ .name }}{{ if index . "classic" }} --classic{{ end }} || FAILURES+=("snap {{ .name }}")
 {{- end }}
+}
 
+install_uv() {
 {{- if .packages.uv }}
-
-echo "== uv tools =="
-command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh
+    echo "== uv tools =="
+    command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh || { FAILURES+=("uv install"); return; }
+    # uv installs to ~/.local/bin, which may not be on PATH in this same run.
+    export PATH="$HOME/.local/bin:$PATH"
 {{- range .packages.uv }}
-uv tool install {{ . }}
+    uv tool install {{ . }} || FAILURES+=("uv {{ . }}")
 {{- end }}
+{{- else }}
+    :  # no uv tools configured
 {{- end }}
+}
 
+install_apt
+install_snap
+install_uv
+
+if [ ${#FAILURES[@]} -gt 0 ]; then
+    echo "== FAILED: ${FAILURES[*]} =="
+    exit 1
+fi
 echo "== packages done =="
