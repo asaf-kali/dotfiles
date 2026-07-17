@@ -8,6 +8,8 @@ packages:
     - zip
     - zsh
   snap:
+    - name: chezmoi
+      classic: true
     - name: ncdu
   uv:
     - rust-just
