@@ -1,0 +1,28 @@
+#!/bin/bash
+# Installs packages from .chezmoidata/packages.yaml.
+# run_onchange_: reruns on `chezmoi apply` whenever rendered content changes.
+set -euo pipefail
+
+echo "== apt =="
+sudo apt update
+sudo apt install --yes \
+{{- range .packages.apt }}
+    {{ . }} \
+{{- end }}
+    ;
+
+echo "== snap =="
+{{- range .packages.snap }}
+sudo snap install {{ .name }}{{ if index . "classic" }} --classic{{ end }}
+{{- end }}
+
+{{- if .packages.uv }}
+
+echo "== uv tools =="
+command -v uv >/dev/null 2>&1 || curl -LsSf https://astral.sh/uv/install.sh | sh
+{{- range .packages.uv }}
+uv tool install {{ . }}
+{{- end }}
+{{- end }}
+
+echo "== packages done =="

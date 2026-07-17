@@ -1,0 +1,14 @@
+# Package lists installed by run_onchange_after_install-packages.sh.tmpl
+# Edit freely — changing this file re-triggers install on `chezmoi apply`.
+packages:
+  apt:
+    - btop
+    - curl
+    - git
+    - zip
+    - zsh
+  snap:
+    - name: ncdu
+  uv:
+    - rust-just
+
