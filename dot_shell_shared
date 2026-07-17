@@ -1,0 +1,20 @@
+# ~/.shell_shared — custom shell logic shared by bash and zsh
+# Sourced from both ~/.bashrc and ~/.zshrc.
+
+# ---- PATH ----
+export PATH="$HOME/.local/bin:/snap/bin:$HOME/projects/agent-rules/scripts:$PATH"
+
+# ---- Aliases (portable) ----
+alias wip='git add . && git status && git commit -m "Auto commit"'
+alias amend='git add . && git status && git commit --amend'
+alias notepad="notepad.exe"
+alias del='gio trash'
+alias update="sudo apt update && sudo apt upgrade --yes && sudo snap refresh && sudo apt autoremove --yes"
+
+# ---- uv/rust env ----
+[ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
+
+# ---- NVM ----
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
