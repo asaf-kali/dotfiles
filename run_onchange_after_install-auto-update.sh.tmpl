@@ -1,0 +1,111 @@
+#!/bin/bash
+# Installs /usr/local/sbin/system-update plus a systemd timer that runs it on the
+# schedule in .chezmoidata/auto_update.yaml.
+#
+# run_onchange_: reruns on `chezmoi apply` whenever rendered content changes, so
+# editing the schedule re-installs the timer.
+#
+# The `update` alias in .shell_shared calls the same script, so the manual and
+# scheduled paths can't drift apart.
+set -uo pipefail
+
+{{- if ne .chezmoi.os "linux" }}
+echo "== auto-update: skipped (not linux) =="
+exit 0
+{{- else }}
+
+if ! command -v systemctl >/dev/null 2>&1 || ! command -v apt-get >/dev/null 2>&1; then
+    echo "== auto-update: skipped (needs systemd + apt) =="
+    exit 0
+fi
+
+echo "== auto-update =="
+
+FAILURES=()
+
+install_script() {
+    sudo install -m 0755 /dev/stdin /usr/local/sbin/system-update <<'SCRIPT' || FAILURES+=("system-update script")
+#!/bin/bash
+# Update apt packages and snaps. Installed by chezmoi — edit the dotfiles repo,
+# not this file. Run manually via the `update` alias, or on a schedule by
+# system-update.timer.
+set -uo pipefail
+
+APT_OPTS=(
+    # Wait for a busy dpkg lock (another apt, unattended-upgrades) instead of failing.
+    -o DPkg::Lock::Timeout=600
+)
+
+if [ ! -t 1 ]; then
+    # Unattended run: nothing may block on a prompt.
+    export DEBIAN_FRONTEND=noninteractive
+    # 'l' = list services needing a restart, never restart them unprompted.
+    export NEEDRESTART_MODE=l
+    # Keep the installed config file whenever a package ships a changed one.
+    APT_OPTS+=(-o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold)
+fi
+
+rc=0
+apt-get "${APT_OPTS[@]}" update || rc=$?
+apt-get "${APT_OPTS[@]}" --yes upgrade || rc=$?
+
+if command -v snap >/dev/null 2>&1; then
+    snap refresh || rc=$?
+fi
+
+apt-get "${APT_OPTS[@]}" --yes autoremove || rc=$?
+
+exit "$rc"
+SCRIPT
+}
+
+install_units() {
+    sudo tee /etc/systemd/system/system-update.service >/dev/null <<'UNIT' || FAILURES+=("service unit")
+[Unit]
+Description=Unattended apt + snap update
+Documentation=https://github.com/asaf-kali/dotfiles
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/system-update
+# Don't let a stuck mirror hold the machine hostage.
+TimeoutStartSec=45min
+UNIT
+
+    sudo tee /etc/systemd/system/system-update.timer >/dev/null <<'UNIT' || FAILURES+=("timer unit")
+[Unit]
+Description=Run system-update on a schedule
+Documentation=https://github.com/asaf-kali/dotfiles
+
+[Timer]
+OnCalendar=*-*-* {{ range $i, $h := .auto_update.hours }}{{ if $i }},{{ end }}{{ printf "%02d" $h }}{{ end }}:00:00
+# Spread the load, and don't hammer mirrors exactly on the hour.
+RandomizedDelaySec={{ .auto_update.randomized_delay }}
+# If the machine was off or asleep at the scheduled time, run once after wake.
+Persistent=true
+Unit=system-update.service
+
+[Install]
+WantedBy=timers.target
+UNIT
+}
+
+enable_timer() {
+    sudo systemctl daemon-reload || { FAILURES+=("daemon-reload"); return; }
+    sudo systemctl enable --now system-update.timer || FAILURES+=("enable timer")
+}
+
+install_script
+install_units
+enable_timer
+
+if [ ${#FAILURES[@]} -gt 0 ]; then
+    echo "== FAILED: ${FAILURES[*]} =="
+    exit 1
+fi
+
+systemctl list-timers system-update.timer --no-pager
+echo "== auto-update done =="
+{{- end }}

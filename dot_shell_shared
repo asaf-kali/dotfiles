@@ -9,7 +9,8 @@ alias wip='git add . && git status && git commit -m "Auto commit"'
 alias amend='git add . && git status && git commit --amend'
 alias notepad="notepad.exe"
 alias del='gio trash'
-alias update="sudo apt update && sudo apt upgrade --yes && sudo snap refresh && sudo apt autoremove --yes"
+# Same script the system-update.timer runs on a schedule, so the two can't drift.
+alias update="sudo /usr/local/sbin/system-update"
 
 # ---- uv/rust env ----
 [ -f "$HOME/.local/bin/env" ] && . "$HOME/.local/bin/env"
