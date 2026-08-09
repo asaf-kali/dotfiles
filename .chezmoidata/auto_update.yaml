@@ -1,0 +1,8 @@
+# Schedule for the unattended system updater installed by
+# run_onchange_after_install-auto-update.sh.tmpl.
+# Editing this file re-triggers the installer on `chezmoi apply`.
+auto_update:
+  # Hours of the day (24h, machine local time) to run. Three times a day.
+  hours: [8, 14, 20]
+  # Jitter added to each run, so it doesn't fire exactly on the hour.
+  randomized_delay: 15min
