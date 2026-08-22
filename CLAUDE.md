@@ -39,6 +39,14 @@ first) and checking the rendered output / resulting shell behavior directly.
   `dot_shell_shared` runs the same installed script by hand, so the manual and scheduled paths can't
   drift apart — always edit the script inside this `.tmpl`, never `/usr/local/sbin/system-update`
   directly, since that copy is overwritten on every `chezmoi apply`.
+- `dot_claude/executable_statusline-command.sh` — installs `~/.claude/statusline-command.sh`, source of
+  truth for the Claude Code statusline shown in this repo's own sessions.
+- `run_onchange_after_install-claude-statusline.sh.tmpl` — points `~/.claude/settings.json`'s
+  `statusLine` at the installed script above. No-ops on machines without the `claude` CLI or `python3`.
+  Reruns on statusline-script edits too: its own hash embeds a `sha256sum` of that script via chezmoi's
+  `include` template func, so the two can't drift apart the same way the update script above doesn't.
+- `.chezmoiignore` — keeps repo-only docs (this file, `README.md`) from being applied into `$HOME`;
+  everything else at the repo root without a `dot_`/`run_` prefix would otherwise land there verbatim.
 
 ## Conventions specific to this repo
 
