@@ -1,43 +1,43 @@
 # dotfiles
 
-Managed with [chezmoi](https://www.chezmoi.io). See docs there.
+Managed with [chezmoi](https://www.chezmoi.io).
 
-## New machine setup
-
-One-time bootstrap. Installs chezmoi, clones this repo, applies dotfiles, runs the package installer:
+## New machine
 
 ```sh
 sh -c "$(curl -fsLS https://chezmoi.io/get)" -- init --apply asaf-kali
 ```
 
-## Updating an existing machine
+Installs chezmoi, clones this repo, applies the dotfiles, then installs packages, oh-my-zsh (with zsh
+as login shell) and the auto-update timer.
 
-Pull latest from repo and apply (chezmoi already installed):
+## Existing machine
 
 ```sh
-chezmoi update
+chezmoi update   # git pull in the source dir, then apply
 ```
+
+Chezmoi's source dir is `~/.local/share/chezmoi` (`chezmoi source-path`) — possibly a different clone
+than the one you edit in, so push first, then `chezmoi update`.
 
 ## Automatic system updates
 
-`chezmoi apply` installs `/usr/local/sbin/system-update` (apt update + upgrade + snap
-refresh + autoremove) and a systemd timer that runs it three times a day. The `update`
-alias runs the same script by hand.
-
-Schedule lives in `.chezmoidata/auto_update.yaml`; edit it and re-apply to change it.
+`chezmoi apply` installs `/usr/local/sbin/system-update` (apt update + upgrade, snap refresh,
+autoremove) and a systemd timer that runs it three times a day. The `update` alias runs the same script
+by hand. Schedule lives in `.chezmoidata/auto_update.yaml` — edit and re-apply to change it.
 
 ```sh
 systemctl list-timers system-update.timer   # when it next runs
 journalctl -u system-update -n 100          # what happened last time
-sudo systemctl start system-update.service  # run it now, unattended-style
+sudo systemctl start system-update.service  # run now, unattended-style
 sudo systemctl disable --now system-update.timer
 ```
 
 ## Common commands
 
 ```sh
-chezmoi re-add           # sync from home into repo (no push)
-chezmoi apply            # apply changes from repo to home
-chezmoi diff             # preview pending changes
-chezmoi cd               # shell into source dir
+chezmoi diff     # preview pending changes
+chezmoi apply    # apply source-dir state to $HOME
+chezmoi re-add   # pull $HOME state back into the source dir
+chezmoi cd       # shell into the source dir (~/.local/share/chezmoi)
 ```
