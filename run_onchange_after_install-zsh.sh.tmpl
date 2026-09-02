@@ -1,0 +1,75 @@
+#!/bin/bash
+# Installs oh-my-zsh and makes zsh the login shell.
+#
+# ~/.zshrc (from dot_zshrc) does `source $ZSH/oh-my-zsh.sh`, so without oh-my-zsh
+# present every zsh startup errors out — this script closes that gap, and the one
+# where zsh is installed but bash is still the login shell.
+#
+# run_onchange_: reruns on `chezmoi apply` whenever rendered content changes. Both
+# steps are idempotent, so a rerun on an already-set-up machine is a no-op.
+#
+# Ordering: chezmoi runs after_ scripts in name order, so this runs after
+# install-packages, which is what installs the zsh package itself.
+set -uo pipefail
+
+{{- if ne .chezmoi.os "linux" }}
+echo "== zsh setup: skipped (not linux) =="
+exit 0
+{{- else }}
+
+ZSH_BIN="$(command -v zsh 2>/dev/null)"
+if [ -z "$ZSH_BIN" ]; then
+    echo "== zsh setup: skipped (zsh not installed) =="
+    exit 0
+fi
+
+echo "== zsh setup =="
+
+FAILURES=()
+
+install_oh_my_zsh() {
+    if [ -d "$HOME/.oh-my-zsh" ]; then
+        echo "-- oh-my-zsh: already installed"
+        return
+    fi
+    if ! command -v curl >/dev/null 2>&1 || ! command -v git >/dev/null 2>&1; then
+        FAILURES+=("oh-my-zsh (needs curl + git)")
+        return
+    fi
+
+    echo "-- oh-my-zsh: installing"
+    local installer
+    installer="$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" \
+        || { FAILURES+=("oh-my-zsh download"); return; }
+    # --unattended: skip the installer's own chsh (done below) and don't exec zsh at the end.
+    # --keep-zshrc: ~/.zshrc belongs to chezmoi, the installer must not replace it.
+    sh -c "$installer" "" --unattended --keep-zshrc || FAILURES+=("oh-my-zsh install")
+}
+
+set_default_shell() {
+    local user current
+    user="$(id -un)"
+    current="$(getent passwd "$user" | cut -d: -f7)"
+    if [ "$current" = "$ZSH_BIN" ]; then
+        echo "-- default shell: already $ZSH_BIN"
+        return
+    fi
+    # chsh refuses any shell that isn't listed in /etc/shells.
+    if ! grep -qxF "$ZSH_BIN" /etc/shells 2>/dev/null; then
+        echo "$ZSH_BIN" | sudo tee -a /etc/shells >/dev/null || { FAILURES+=("/etc/shells"); return; }
+    fi
+    echo "-- default shell: $current -> $ZSH_BIN"
+    # Through sudo so an unattended apply doesn't block on chsh's password prompt.
+    sudo chsh -s "$ZSH_BIN" "$user" || FAILURES+=("chsh")
+}
+
+install_oh_my_zsh
+set_default_shell
+
+if [ ${#FAILURES[@]} -gt 0 ]; then
+    echo "== FAILED: ${FAILURES[*]} =="
+    exit 1
+fi
+
+echo "== zsh setup done (log out and back in for the shell change) =="
+{{- end }}

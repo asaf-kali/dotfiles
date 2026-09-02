@@ -33,6 +33,10 @@ first) and checking the rendered output / resulting shell behavior directly.
   `.chezmoidata/packages.yaml` (apt, snap, uv tool). Sections are independent: one failing package
   doesn't stop the rest; failures are collected and reported at the end, script exits non-zero if any
   occurred.
+- `run_onchange_after_install-zsh.sh.tmpl` — installs oh-my-zsh (`--unattended --keep-zshrc`, so it
+  never touches chezmoi's `~/.zshrc`) and `chsh`es the login shell to zsh. Linux-only; no-ops when zsh
+  isn't installed or when both are already set up. Chezmoi runs `after_` scripts in name order, so this
+  lands after `install-packages`, which is what installs the zsh apt package it depends on.
 - `run_onchange_after_install-auto-update.sh.tmpl` — installs `/usr/local/sbin/system-update` (apt
   update/upgrade + snap refresh + autoremove) plus a systemd service/timer that runs it on the schedule
   in `.chezmoidata/auto_update.yaml`. Linux-only (no-ops elsewhere); the `update` alias in
