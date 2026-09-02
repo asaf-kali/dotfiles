@@ -42,7 +42,10 @@ is already in the post-install state, so it only exercises the no-op path.
   update/upgrade, snap refresh, autoremove) plus a systemd service/timer on the schedule in
   `.chezmoidata/auto_update.yaml`. Linux-only. Always edit the script *inside* this `.tmpl`, never
   `/usr/local/sbin/system-update` — that copy is overwritten every apply, and `dot_shell_shared`'s
-  `update` alias runs it, so manual and scheduled paths can't drift apart.
+  `update` alias runs it, so manual and scheduled paths can't drift apart. Upgrades use
+  `--with-new-pkgs` (as unattended-upgrades does) so updates needing a new dependency aren't held back.
+  This complements unattended-upgrades rather than duplicating it: u-u is limited to the security
+  origins, so third-party repos and `-updates` only get applied here.
 - `dot_claude/executable_statusline-command.sh` — source of truth for `~/.claude/statusline-command.sh`.
 - `run_onchange_after_install-claude-statusline.sh.tmpl` — points `~/.claude/settings.json`'s
   `statusLine` at that script. No-ops without the `claude` CLI or `python3`. Its own hash embeds a

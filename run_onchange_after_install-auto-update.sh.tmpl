@@ -47,7 +47,10 @@ fi
 
 rc=0
 apt-get "${APT_OPTS[@]}" update || rc=$?
-apt-get "${APT_OPTS[@]}" --yes upgrade || rc=$?
+# --with-new-pkgs applies upgrades that pull in a new dependency, which plain
+# `upgrade` silently holds back — the same flag unattended-upgrades uses. Still
+# never removes a package, unlike dist-upgrade.
+apt-get "${APT_OPTS[@]}" --yes --with-new-pkgs upgrade || rc=$?
 
 if command -v snap >/dev/null 2>&1; then
     snap refresh || rc=$?
