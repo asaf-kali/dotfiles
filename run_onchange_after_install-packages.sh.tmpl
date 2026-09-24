@@ -4,22 +4,33 @@
 #
 # Sections are independent: a failure in one (or in a single package) is
 # logged and does not stop the others. Exits non-zero if anything failed.
+# Packages this machine can't provide (not in its apt repos, or no snap
+# command) are warnings, not failures, so later run_ scripts still run.
 set -uo pipefail
 
 FAILURES=()
+SKIPPED=()
 
 install_apt() {
     echo "== apt =="
     sudo apt update || { FAILURES+=("apt update"); return; }
-    sudo apt install --yes \
-{{- range .packages.apt }}
-        {{ . }} \
-{{- end }}
-        || FAILURES+=("apt install")
+    # apt install is all-or-nothing, so one package missing from this
+    # release's repos would block the rest: install only what apt can find.
+    local available=()
+    for pkg in{{ range .packages.apt }} {{ . }}{{ end }}; do
+        if apt-cache show "$pkg" >/dev/null 2>&1; then
+            available+=("$pkg")
+        else
+            SKIPPED+=("apt $pkg")
+        fi
+    done
+    [ ${#available[@]} -gt 0 ] || return
+    sudo apt install --yes "${available[@]}" || FAILURES+=("apt install")
 }
 
 install_snap() {
     echo "== snap =="
+    command -v snap >/dev/null 2>&1 || { SKIPPED+=("snap (not installed)"); return; }
 {{- range .packages.snap }}
     sudo snap install {{ .name }}{{ if index . "classic" }} --classic{{ end }} || FAILURES+=("snap {{ .name }}")
 {{- end }}
@@ -43,6 +54,9 @@ install_apt
 install_snap
 install_uv
 
+if [ ${#SKIPPED[@]} -gt 0 ]; then
+    echo "== SKIPPED (unavailable here): ${SKIPPED[*]} =="
+fi
 if [ ${#FAILURES[@]} -gt 0 ]; then
     echo "== FAILED: ${FAILURES[*]} =="
     exit 1
