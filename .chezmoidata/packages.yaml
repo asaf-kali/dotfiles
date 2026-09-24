@@ -1,5 +1,6 @@
 # Package lists installed by run_onchange_after_install-packages.sh.tmpl
 # Edit freely — changing this file re-triggers install on `chezmoi apply`.
+# snap entries may set `apt:` — the apt package installed instead on machines without snap.
 packages:
   apt:
     - btop
@@ -11,6 +12,7 @@ packages:
     - name: chezmoi
       classic: true
     - name: ncdu
+      apt: ncdu
   uv:
     - rust-just
 

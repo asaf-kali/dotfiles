@@ -53,6 +53,11 @@ is already in the post-install state, so it only exercises the no-op path.
   content, which is what makes the matching `run_onchange_` script rerun.
 - `run_onchange_after_install-packages.sh.tmpl` — installs `.chezmoidata/packages.yaml` (apt, snap, uv
   tool). Sections are independent; failures are collected, reported at the end, and exit non-zero.
+  Packages a machine can't provide — apt packages missing from its release's repos (checked with
+  `apt-cache show`), or the whole snap section when `snap` isn't installed — are skipped with a
+  warning instead, so they don't block the `after_` scripts that sort later.
+  Without snap, snap entries that set `apt:` in `packages.yaml` install that apt package instead;
+  snapd itself is never installed.
 - `run_onchange_after_install-zsh.sh.tmpl` — installs oh-my-zsh (`--unattended --keep-zshrc`, so it
   never replaces chezmoi's `~/.zshrc`) and `chsh`es the login shell to zsh through sudo, adding zsh to
   `/etc/shells` first if needed. Linux-only; no-ops when zsh is absent or both steps are already done.
