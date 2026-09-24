@@ -20,6 +20,17 @@ chezmoi update   # git pull in the source dir, then apply
 Chezmoi's source dir is `~/.local/share/chezmoi` (`chezmoi source-path`) — possibly a different clone
 than the one you edit in, so push first, then `chezmoi update`.
 
+## Machine-local customizations
+
+Chezmoi owns `~/.bashrc`, `~/.zshrc` and `~/.shell_shared`, so don't edit them. They source these
+unmanaged files at the end, if present:
+
+| File                     | Sourced by                    |
+|--------------------------|-------------------------------|
+| `~/.custom_shell_shared` | bash and zsh (`.shell_shared`) |
+| `~/.custom_bashrc`       | bash                          |
+| `~/.custom_zshrc`        | zsh                           |
+
 ## Automatic system updates
 
 `chezmoi apply` installs `/usr/local/sbin/system-update` (apt update + upgrade, snap refresh,

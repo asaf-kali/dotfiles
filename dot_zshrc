@@ -135,3 +135,6 @@ add-zsh-hook chpwd _auto_activate_venv
 _auto_activate_venv
 
 [ -f ~/.shell_shared ] && source ~/.shell_shared
+
+# Machine-local zsh customizations (not managed by chezmoi).
+[ -f ~/.custom_zshrc ] && source ~/.custom_zshrc

@@ -19,3 +19,6 @@ alias update="sudo /usr/local/sbin/system-update"
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+# ---- Machine-local customizations shared by bash and zsh (not managed by chezmoi) ----
+[ -f ~/.custom_shell_shared ] && . ~/.custom_shell_shared

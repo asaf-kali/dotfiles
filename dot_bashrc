@@ -16,8 +16,7 @@ HISTCONTROL=ignoreboth
 shopt -s histappend
 
 # for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
-HISTSIZE=1000
-HISTFILESIZE=2000
+# Defaults are set at the end of this file, after ~/.custom_bashrc, so it can override them.
 
 # check the window size after each command and, if necessary,
 # update the values of LINES and COLUMNS.
@@ -123,3 +122,11 @@ bind '"\e[A": history-search-backward'
 bind '"\e[B": history-search-forward'
 
 [ -f ~/.shell_shared ] && source ~/.shell_shared
+
+# Machine-local bash customizations (not managed by chezmoi).
+[ -f ~/.custom_bashrc ] && source ~/.custom_bashrc
+
+# History length defaults, only if ~/.custom_bashrc didn't set them. They can't go at the top: assigning
+# HISTFILESIZE truncates the history file on the spot, so a larger value set later comes too late.
+# HISTFILESIZE counts lines, not bytes; 500k is ~10MB at typical command lengths.
+: "${HISTSIZE:=100000}" "${HISTFILESIZE:=500000}"

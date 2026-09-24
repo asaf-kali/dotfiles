@@ -28,6 +28,12 @@ is already in the post-install state, so it only exercises the no-op path.
 
 - `dot_bashrc`, `dot_zshrc` — bash / oh-my-zsh rc files. Both source `dot_shell_shared` at the end
   (PATH, aliases, uv/nvm env).
+- Machine-local hooks: `~/.custom_shell_shared` (end of `dot_shell_shared`), then `~/.custom_bashrc` /
+  `~/.custom_zshrc` (end of the rc files), each sourced only if present. They are deliberately absent
+  from this repo, so chezmoi never writes them — per-machine settings go there, not in the managed files.
+  `dot_bashrc` sets its `HISTSIZE`/`HISTFILESIZE` defaults *after* `~/.custom_bashrc`, only if unset:
+  assigning `HISTFILESIZE` truncates the history file immediately, so an earlier default would cut
+  history before a larger custom value took effect.
 - `.chezmoidata/*.yaml` — data (package lists, update schedule) read by templates through chezmoi's `.`
   context. Editing these is the intended way to change behavior: it changes the rendered script
   content, which is what makes the matching `run_onchange_` script rerun.
