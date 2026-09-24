@@ -8,6 +8,8 @@
 Drawn as a two-row table with a titled cell per field and columns aligned:
   row 1: model | context bar | folder
   row 2: effort | session bar | git branch + status
+A missing field shows a gray `N/A` (a usage bar shows 0%) rather than dropping its cell,
+so the layout stays fixed.
 """
 
 import json
@@ -31,6 +33,7 @@ BAR_WIDTH = 10
 GIT_TIMEOUT_SECONDS = 2
 # Reasoning effort, low to high: same green -> yellow -> orange -> red scale as the usage bars
 EFFORT_COLORS = {"low": GREEN, "medium": GREEN, "high": YELLOW, "xhigh": ORANGE, "max": RED}
+MISSING_TEXT = "N/A"
 
 
 @dataclass
@@ -153,8 +156,21 @@ def read_git_status(*, cwd: str) -> GitStatus | None:
     )
 
 
-def git_cell(*, status: GitStatus) -> Cell:
+def missing_cell(*, title: str) -> Cell:
+    return Cell(title=title, spans=[Span(text=MISSING_TEXT, color=GRAY)])
+
+
+def text_cell(*, title: str, text: str | None, color: str) -> Cell:
+    """A single-span cell, `N/A` when `text` is missing."""
+    if not text:
+        return missing_cell(title=title)
+    return Cell(title=title, spans=[Span(text=text, color=color)])
+
+
+def git_cell(*, status: GitStatus | None) -> Cell:
     """E.g. `main *3 ↑2 ↓1` (changed files, unpushed, behind), or `main ✓` when clean."""
+    if not status:
+        return missing_cell(title="git")
     spans = [Span(text=status.head, color=MAGENTA)]
     if status.changed:
         spans.append(Span(text=f"*{status.changed}", color=YELLOW))
@@ -167,49 +183,43 @@ def git_cell(*, status: GitStatus) -> Cell:
     return Cell(title="git", spans=spans)
 
 
-def usage_cell(*, title: str, pct: int) -> Cell:
+def usage_cell(*, title: str, used: float | None) -> Cell:
+    # A missing reading (e.g. no session usage yet) shows as 0% rather than `N/A`
+    pct = round(used or 0)
     text = f"{progress_bar(pct=pct)} {pct}%"
     return Cell(title=title, spans=[Span(text=text, color=usage_color(pct=pct))])
 
 
 def first_line(*, data: dict[str, Any], cwd: str | None) -> list[Cell]:
-    cells = []
-    if model := get(data=data, path="model.display_name"):
-        # Drop the parenthesized suffix: "Opus 5.5 (1M context)" -> "Opus 5.5"
-        short_model = model.split("(")[0].strip()
-        cells.append(Cell(title="model", spans=[Span(text=short_model, color=YELLOW)]))
-    ctx_used = get(data=data, path="context_window.used_percentage")
-    if ctx_used is not None:
-        cells.append(usage_cell(title="context", pct=round(ctx_used)))
-    if cwd:
-        cells.append(Cell(title="folder", spans=[Span(text=Path(cwd).name, color=CYAN)]))
-    return cells
+    model = get(data=data, path="model.display_name")
+    # Drop the parenthesized suffix: "Opus 5.5 (1M context)" -> "Opus 5.5"
+    short_model = model.split("(")[0].strip() if model else None
+    folder = Path(cwd).name if cwd else None
+    return [
+        text_cell(title="model", text=short_model, color=YELLOW),
+        usage_cell(title="context", used=get(data=data, path="context_window.used_percentage")),
+        text_cell(title="folder", text=folder, color=CYAN),
+    ]
 
 
 def second_line(*, data: dict[str, Any], cwd: str | None) -> list[Cell]:
-    cells = []
-    if effort := get(data=data, path="effort.level"):
-        color = EFFORT_COLORS.get(effort, GRAY)
-        cells.append(Cell(title="effort", spans=[Span(text=effort, color=color)]))
-    session_used = get(data=data, path="rate_limits.five_hour.used_percentage")
-    if session_used is not None:
-        cells.append(usage_cell(title="session", pct=round(session_used)))
+    effort = get(data=data, path="effort.level")
     status = read_git_status(cwd=cwd) if cwd else None
-    if status:
-        cells.append(git_cell(status=status))
-    return cells
+    return [
+        text_cell(title="effort", text=effort, color=EFFORT_COLORS.get(effort, GRAY)),
+        usage_cell(title="session", used=get(data=data, path="rate_limits.five_hour.used_percentage")),
+        git_cell(status=status),
+    ]
 
 
 def column_widths(*, lines: list[list[Cell]]) -> list[int]:
     """Width of each column: its widest cell across all lines."""
-    columns = max(len(line) for line in lines)
-    return [max((line[i].width for line in lines if i < len(line)), default=0) for i in range(columns)]
+    return [max(cell.width for cell in column) for column in zip(*lines, strict=True)]
 
 
 def render_row(*, cells: list[Cell], widths: list[int]) -> str:
-    """One ` cell │ cell ` row; a row with fewer cells than columns gets blank ones."""
-    parts = [f" {cell.render()}{' ' * (widths[i] - cell.width)} " for i, cell in enumerate(cells)]
-    parts += [" " * (width + 2) for width in widths[len(cells) :]]
+    """One ` cell │ cell ` row, each cell padded to its column width."""
+    parts = [f" {cell.render()}{' ' * (width - cell.width)} " for cell, width in zip(cells, widths, strict=True)]
     # Claude Code trims leading whitespace anyway; drop it here so what we print is what shows
     return BORDER.join(parts).removeprefix(" ").rstrip()
 
@@ -226,9 +236,7 @@ def main() -> None:
     except json.JSONDecodeError:
         return
     cwd = get(data=data, path="workspace.current_dir") or get(data=data, path="cwd")
-    lines = [line for line in (first_line(data=data, cwd=cwd), second_line(data=data, cwd=cwd)) if line]
-    if not lines:
-        return
+    lines = [first_line(data=data, cwd=cwd), second_line(data=data, cwd=cwd)]
     print(render_table(lines=lines), end="")
 
 
