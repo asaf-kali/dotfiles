@@ -27,13 +27,23 @@ is already in the post-install state, so it only exercises the no-op path.
 ## Structure
 
 - `dot_bashrc`, `dot_zshrc` — bash / oh-my-zsh rc files. Both source `dot_shell_shared` at the end
-  (PATH, aliases, uv/nvm env).
+  (PATH, aliases, uv/nvm env). nvm is lazy-loaded: sourcing `nvm.sh` cost ~0.15s of every new shell,
+  and its default `nvm use` (which spawns npm/node) ~0.5s more. Instead the default alias's newest
+  matching version goes on PATH by hand (with `NVM_BIN`/`NVM_INC`, as `nvm use` sets them), and `nvm`
+  is a stub that sources the real one plus its completion on first call — so `nvm` tab completion
+  only works after the first `nvm` command in a shell. A version already on PATH (inherited from a
+  parent shell) is kept, as nvm does. Aliases that aren't a version prefix (`lts/*`, `node`) fall back
+  to a real `nvm use`.
+- `dot_zshenv` — sets `skip_global_compinit=1`, so Ubuntu's `/etc/zsh/zshrc` doesn't run a compinit
+  that oh-my-zsh repeats anyway. Ends by sourcing `~/.custom_zshenv`: installers such as rustup append
+  to `~/.zshenv`, which chezmoi would overwrite, so those lines belong there instead.
 - `dot_zprofile` — sources `~/.profile` (in sh emulation) for zsh login shells, which don't read it
   themselves. The GNOME session starts via `$SHELL -l`, so without it desktop-launched apps lose the
   PATH `~/.profile` builds once `install-zsh` makes zsh the login shell. `~/.profile` stays unmanaged:
   it's the distro default plus machine-local entries.
 - Machine-local hooks: `~/.custom_shell_shared` (end of `dot_shell_shared`), then `~/.custom_bashrc` /
-  `~/.custom_zshrc` (end of the rc files), each sourced only if present. They are deliberately absent
+  `~/.custom_zshrc` (end of the rc files), plus `~/.custom_zshenv` (end of `dot_zshenv`, for every zsh,
+  scripts included), each sourced only if present. They are deliberately absent
   from this repo, so chezmoi never writes them — per-machine settings go there, not in the managed files.
   `dot_bashrc` sets its `HISTSIZE`/`HISTFILESIZE` defaults *after* `~/.custom_bashrc`, only if unset:
   assigning `HISTFILESIZE` truncates the history file immediately, so an earlier default would cut

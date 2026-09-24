@@ -22,14 +22,15 @@ than the one you edit in, so push first, then `chezmoi update`.
 
 ## Machine-local customizations
 
-Chezmoi owns `~/.bashrc`, `~/.zshrc` and `~/.shell_shared`, so don't edit them. They source these
-unmanaged files at the end, if present:
+Chezmoi owns `~/.bashrc`, `~/.zshrc`, `~/.zshenv` and `~/.shell_shared`, so don't edit them. They
+source these unmanaged files at the end, if present:
 
-| File                     | Sourced by                    |
-|--------------------------|-------------------------------|
-| `~/.custom_shell_shared` | bash and zsh (`.shell_shared`) |
-| `~/.custom_bashrc`       | bash                          |
-| `~/.custom_zshrc`        | zsh                           |
+| File                     | Sourced by                              |
+|--------------------------|-----------------------------------------|
+| `~/.custom_shell_shared` | bash and zsh (`.shell_shared`)          |
+| `~/.custom_bashrc`       | bash                                    |
+| `~/.custom_zshrc`        | zsh                                     |
+| `~/.custom_zshenv`       | every zsh, scripts included (`.zshenv`) |
 
 ## Automatic system updates
 

@@ -1,0 +1,7 @@
+# ~/.zshenv — read by every zsh, before ~/.zprofile and ~/.zshrc.
+
+# Ubuntu's /etc/zsh/zshrc runs compinit unless this is set; oh-my-zsh runs it again anyway.
+skip_global_compinit=1
+
+# Machine-local zshenv (not managed by chezmoi), e.g. installer lines like rustup's `. "$HOME/.cargo/env"`.
+[ -f ~/.custom_zshenv ] && . ~/.custom_zshenv

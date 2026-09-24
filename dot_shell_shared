@@ -17,8 +17,32 @@ alias update="sudo /usr/local/sbin/system-update"
 
 # ---- NVM ----
 export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+if [ -s "$NVM_DIR/nvm.sh" ]; then
+  # Sourcing nvm.sh costs ~0.15s per shell, and its default `nvm use` ~0.5s more (spawns npm/node).
+  # Instead, `nvm` is a stub that loads the real one (and its completion) on first call, and the
+  # newest installed version matching the default alias (e.g. "20" -> v20.20.0) goes on PATH directly.
+  command -v nvm >/dev/null 2>&1 || nvm() {
+    unset -f nvm
+    \. "$NVM_DIR/nvm.sh" --no-use
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+    nvm "$@"
+  }
+  case ":$PATH:" in
+    *":$NVM_DIR/versions/node/"*) ;;  # a version is already active (inherited), keep it like nvm does
+    *)
+      _nvm_alias=$(cat "$NVM_DIR/alias/default" 2>/dev/null)
+      _nvm_version=$(command ls "$NVM_DIR/versions/node" 2>/dev/null \
+        | awk -v a="v${_nvm_alias#v}" '$0 == a || index($0, a ".") == 1' | sort -V | tail -1)
+      if [ -n "$_nvm_version" ]; then
+        export NVM_BIN="$NVM_DIR/versions/node/$_nvm_version/bin"
+        export NVM_INC="$NVM_DIR/versions/node/$_nvm_version/include/node"
+        export PATH="$NVM_BIN:$PATH"
+      elif [ -n "$_nvm_alias" ]; then
+        nvm use default --silent >/dev/null 2>&1  # e.g. "lts/*" or "node": let the real nvm resolve it
+      fi
+      unset _nvm_alias _nvm_version ;;
+  esac
+fi
 
 # ---- Machine-local customizations shared by bash and zsh (not managed by chezmoi) ----
 [ -f ~/.custom_shell_shared ] && . ~/.custom_shell_shared
