@@ -28,6 +28,10 @@ is already in the post-install state, so it only exercises the no-op path.
 
 - `dot_bashrc`, `dot_zshrc` — bash / oh-my-zsh rc files. Both source `dot_shell_shared` at the end
   (PATH, aliases, uv/nvm env).
+- `dot_zprofile` — sources `~/.profile` (in sh emulation) for zsh login shells, which don't read it
+  themselves. The GNOME session starts via `$SHELL -l`, so without it desktop-launched apps lose the
+  PATH `~/.profile` builds once `install-zsh` makes zsh the login shell. `~/.profile` stays unmanaged:
+  it's the distro default plus machine-local entries.
 - Machine-local hooks: `~/.custom_shell_shared` (end of `dot_shell_shared`), then `~/.custom_bashrc` /
   `~/.custom_zshrc` (end of the rc files), each sourced only if present. They are deliberately absent
   from this repo, so chezmoi never writes them — per-machine settings go there, not in the managed files.
@@ -52,9 +56,12 @@ is already in the post-install state, so it only exercises the no-op path.
   `--with-new-pkgs` (as unattended-upgrades does) so updates needing a new dependency aren't held back.
   This complements unattended-upgrades rather than duplicating it: u-u is limited to the security
   origins, so third-party repos and `-updates` only get applied here.
-- `dot_claude/executable_statusline-command.sh` — source of truth for `~/.claude/statusline-command.sh`.
+- `dot_claude/executable_statusline.py` — source of truth for `~/.claude/statusline.py`: a stdlib-only
+  uv script (PEP 723 header) printing a titled 2-row table with aligned columns: model | context
+  bar | folder, then effort | session bar | git branch + status.
 - `run_onchange_after_install-claude-statusline.sh.tmpl` — points `~/.claude/settings.json`'s
-  `statusLine` at that script. No-ops without the `claude` CLI or `python3`. Its own hash embeds a
+  `statusLine` at `uv run --quiet --script ~/.claude/statusline.py`. No-ops without the `claude` CLI
+  or `python3`; doesn't need `uv` yet, since it runs before install-packages. Its own hash embeds a
   `sha256sum` of the statusline script (chezmoi's `include` func), so editing that script reruns this.
 - `.chezmoiignore` — keeps repo-only docs (this file, `README.md`) out of `$HOME`; root files without a
   `dot_`/`run_` prefix would otherwise land there verbatim.

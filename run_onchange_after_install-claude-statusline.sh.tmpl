@@ -1,13 +1,16 @@
 #!/bin/bash
-# Points Claude Code's statusLine at ~/.claude/statusline-command.sh (installed by
-# chezmoi from dot_claude/executable_statusline-command.sh), on any machine where the
+# Points Claude Code's statusLine at ~/.claude/statusline.py (installed by chezmoi from
+# dot_claude/executable_statusline.py), run through `uv`, on any machine where the
 # `claude` CLI is present. Skips otherwise.
+#
+# Doesn't require `uv`: this script sorts before install-packages, which installs it, so on
+# a fresh machine it may not exist yet. The statusline starts working once it does.
 #
 # run_onchange_: reruns on `chezmoi apply` whenever this rendered script changes. The
 # hash below pulls the statusline script's own content into that hash, so editing it
 # also re-triggers this — the two can't drift apart.
 #
-# statusline script hash (forces rerun on change): {{ include "dot_claude/executable_statusline-command.sh" | sha256sum }}
+# statusline script hash (forces rerun on change): {{ include "dot_claude/executable_statusline.py" | sha256sum }}
 set -uo pipefail
 
 if ! command -v claude >/dev/null 2>&1; then
@@ -24,7 +27,9 @@ mkdir -p "$HOME/.claude"
 settings="$HOME/.claude/settings.json"
 [ -f "$settings" ] || printf '{}' > "$settings"
 
-python3 - "$settings" "bash $HOME/.claude/statusline-command.sh" <<'PY'
+# Literal `~` (single quotes): Claude Code runs the command through a shell, which expands it,
+# so settings.json stays free of machine-specific home paths.
+python3 - "$settings" 'uv run --quiet --script ~/.claude/statusline.py' <<'PY'
 import json
 import sys
 

@@ -1,0 +1,7 @@
+# ~/.zprofile — read by zsh login shells only (bash logins read ~/.profile instead).
+#
+# The GNOME session starts through `$SHELL -l`, so everything launched from the desktop inherits
+# this shell's environment, but zsh never reads ~/.profile on its own. Source it rather than copy
+# its PATH setup here: it stays the one place for login env (~/bin, ~/.local/bin and machine-local
+# additions), shared with bash. It's POSIX sh, so read it in sh emulation.
+[[ -r "$HOME/.profile" ]] && emulate sh -c '. "$HOME/.profile"'
