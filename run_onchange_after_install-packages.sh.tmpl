@@ -6,6 +6,7 @@
 # logged and does not stop the others. Exits non-zero if anything failed.
 # Packages this machine can't provide (not in its apt repos, or no snap
 # command) are warnings, not failures, so later run_ scripts still run.
+# Without snap, snap entries with an `apt:` fallback install through apt.
 set -uo pipefail
 
 FAILURES=()
@@ -16,8 +17,10 @@ install_apt() {
     sudo apt update || { FAILURES+=("apt update"); return; }
     # apt install is all-or-nothing, so one package missing from this
     # release's repos would block the rest: install only what apt can find.
+    local wanted=({{ range .packages.apt }} {{ . }}{{ end }})
+    command -v snap >/dev/null 2>&1 || wanted+=({{ range .packages.snap }}{{ if index . "apt" }} {{ .apt }}{{ end }}{{ end }})
     local available=()
-    for pkg in{{ range .packages.apt }} {{ . }}{{ end }}; do
+    for pkg in "${wanted[@]}"; do
         if apt-cache show "$pkg" >/dev/null 2>&1; then
             available+=("$pkg")
         else
@@ -30,10 +33,20 @@ install_apt() {
 
 install_snap() {
     echo "== snap =="
-    command -v snap >/dev/null 2>&1 || { SKIPPED+=("snap (not installed)"); return; }
+    command -v snap >/dev/null 2>&1 || { skip_snap; return; }
 {{- range .packages.snap }}
     sudo snap install {{ .name }}{{ if index . "classic" }} --classic{{ end }} || FAILURES+=("snap {{ .name }}")
 {{- end }}
+}
+
+# Without snap: entries with an apt fallback were already added to install_apt.
+skip_snap() {
+{{- range .packages.snap }}
+{{- if not (index . "apt") }}
+    SKIPPED+=("snap {{ .name }} (no snap, no apt fallback)")
+{{- end }}
+{{- end }}
+    :
 }
 
 install_uv() {
