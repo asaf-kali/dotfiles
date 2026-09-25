@@ -107,6 +107,10 @@ source $ZSH/oh-my-zsh.sh
 
 zstyle ':completion:*:*:git*:*' ignored-patterns '*ORIG_HEAD'
 
+# oh-my-zsh sets LESS=-R, which stops git from applying its default FRX: without -F short output
+# still opens the pager, and without -X less clears/restores the screen, garbling the output.
+export LESS="-FRX"
+
 # just autocomplete
 _just_completion() {
     if [[ -f "justfile" ]]; then
