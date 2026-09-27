@@ -74,6 +74,10 @@ plugins=(git)
 
 source $ZSH/oh-my-zsh.sh
 
+# Oh My Zsh defaults SAVEHIST to 10000, which trims the history file on save; match bash's HISTSIZE.
+HISTSIZE=100000
+SAVEHIST=100000
+
 # User configuration
 
 # export MANPATH="/usr/local/man:$MANPATH"
