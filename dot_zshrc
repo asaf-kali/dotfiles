@@ -110,6 +110,9 @@ SAVEHIST=100000
 ### Personal (zsh-only) ###
 
 zstyle ':completion:*:*:git*:*' ignored-patterns '*ORIG_HEAD'
+# zsh's _git lists remote refs via `%(refname:short)`, which shortens `refs/remotes/origin/HEAD` to a bare
+# `origin`. That extra candidate stops `orig<TAB>` at `origin` instead of `origin/` (bash lists `origin/HEAD`).
+zstyle ':completion:*:*:git*:*:heads-remote' ignored-patterns '^*/*'
 
 # oh-my-zsh sets LESS=-R, which stops git from applying its default FRX: without -F short output
 # still opens the pager, and without -X less clears/restores the screen, garbling the output.
