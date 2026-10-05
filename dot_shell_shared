@@ -44,5 +44,13 @@ if [ -s "$NVM_DIR/nvm.sh" ]; then
   esac
 fi
 
+# ---- ~/.env (KEY=VALUE lines, not managed by chezmoi) ----
+# `set -a` exports every assignment, so plain dotenv lines need no `export` prefix.
+if [ -f "$HOME/.env" ]; then
+  set -a
+  . "$HOME/.env"
+  set +a
+fi
+
 # ---- Machine-local customizations shared by bash and zsh (not managed by chezmoi) ----
 [ -f ~/.custom_shell_shared ] && . ~/.custom_shell_shared

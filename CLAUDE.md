@@ -43,7 +43,8 @@ is already in the post-install state, so it only exercises the no-op path.
   it's the distro default plus machine-local entries.
 - Machine-local hooks: `~/.custom_shell_shared` (end of `dot_shell_shared`), then `~/.custom_bashrc` /
   `~/.custom_zshrc` (end of the rc files), plus `~/.custom_zshenv` (end of `dot_zshenv`, for every zsh,
-  scripts included), each sourced only if present. They are deliberately absent
+  scripts included), each sourced only if present. `dot_shell_shared` also sources `~/.env` (before
+  `~/.custom_shell_shared`) under `set -a`, so its plain `KEY=VALUE` lines become exported env vars. They are deliberately absent
   from this repo, so chezmoi never writes them — per-machine settings go there, not in the managed files.
   `dot_bashrc` sets its `HISTSIZE`/`HISTFILESIZE` defaults *after* `~/.custom_bashrc`, only if unset:
   assigning `HISTFILESIZE` truncates the history file immediately, so an earlier default would cut
