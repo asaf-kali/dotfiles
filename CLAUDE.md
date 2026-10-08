@@ -50,9 +50,11 @@ is already in the post-install state, so it only exercises the no-op path.
   assigning `HISTFILESIZE` truncates the history file immediately, so an earlier default would cut
   history before a larger custom value took effect.
 - `private_dot_config/git/config` — shared git config (push/pull/branch behavior, git-town aliases,
-  lfs), placed at git's XDG path `~/.config/git/config`. Machine-local `[user]`/`[core]` stay in the
+  lfs), placed at git's XDG path `~/.config/git/config`. Machine-local settings (`[user]`) stay in the
   unmanaged `~/.gitconfig`, which git reads after the XDG file, so its values win. `git config --global`
   writes to `~/.gitconfig`, so a shared setting changed that way must be moved here by hand.
+- `private_dot_config/git/ignore` — global gitignore, at git's default `core.excludesfile` location. Don't
+  set `core.excludesfile` anywhere: it replaces this file instead of adding to it.
 - `.chezmoidata/*.yaml` — data (package lists, update schedule) read by templates through chezmoi's `.`
   context. Editing these is the intended way to change behavior: it changes the rendered script
   content, which is what makes the matching `run_onchange_` script rerun.

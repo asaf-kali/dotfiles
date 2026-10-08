@@ -1,5 +1,7 @@
 # Shared git config, managed by chezmoi.
-# Machine-local settings (user, core) live in ~/.gitconfig, which git reads after this file and so overrides it.
+# Machine-local settings (user) live in ~/.gitconfig, which git reads after this file and so overrides it.
+[core]
+	editor = vim
 [push]
 	default = current
 	autoSetupRemote = true
