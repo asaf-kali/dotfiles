@@ -89,6 +89,8 @@ is already in the post-install state, so it only exercises the no-op path.
   from `.chezmoidata/claude_plugins.yaml` (`repo` + `plugin@marketplace`) via the `claude` CLI. No-ops
   without `claude`. A repo is probed with `git ls-remote` (ssh, then https, no prompts) first; no
   access means that plugin is skipped with a warning. Re-adding/installing an existing one is a no-op.
+  A marketplace already named in `settings.json`'s `extraKnownMarketplaces` is added from that declared
+  source instead (the CLI refuses any other), so a machine's own entry wins over `repo`.
 - `.chezmoiignore` — keeps repo-only docs (this file, `README.md`) out of `$HOME`; root files without a
   `dot_`/`run_` prefix would otherwise land there verbatim.
 

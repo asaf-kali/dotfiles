@@ -6,6 +6,10 @@
 # machine without git access to it skips that plugin with a warning instead of hanging or
 # failing. A failed add/install is collected and reported at the end; other plugins still run.
 #
+# A marketplace already declared in settings.json's `extraKnownMarketplaces` (by name, the part
+# after `@`) is added from that declared source instead: `claude plugin marketplace add` refuses
+# any other source for it, and the machine's own entry wins over this repo's.
+#
 # run_onchange_: reruns on `chezmoi apply` whenever the rendered plugin list changes.
 set -uo pipefail
 
@@ -23,13 +27,34 @@ can_reach() {
         GIT_TERMINAL_PROMPT=0 git ls-remote --exit-code "https://github.com/${repo}.git" HEAD >/dev/null 2>&1
 }
 
+# Prints the source (repo, url or path) settings.json declares for marketplace $1, if any.
+declared_source() {
+    command -v python3 >/dev/null 2>&1 || return 0
+    python3 - "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json" "$1" <<'PY'
+import json
+import sys
+
+path, name = sys.argv[1], sys.argv[2]
+try:
+    with open(path) as f:
+        data = json.load(f)
+except (OSError, ValueError):
+    sys.exit()
+
+source = data.get("extraKnownMarketplaces", {}).get(name, {}).get("source", {})
+print(source.get("repo") or source.get("url") or source.get("path") or "")
+PY
+}
+
 install_plugin() {
-    local repo="$1" plugin="$2"
-    if ! can_reach "$repo"; then
+    local repo="$1" plugin="$2" source
+    source="$(declared_source "${plugin#*@}")"
+    if [ -z "$source" ] && ! can_reach "$repo"; then
         echo "WARNING: no git access to $repo, skipping $plugin" >&2
         return
     fi
-    claude plugin marketplace add "$repo" || { FAILURES+=("marketplace $repo"); return; }
+    source="${source:-$repo}"
+    claude plugin marketplace add "$source" || { FAILURES+=("marketplace $source"); return; }
     claude plugin install "$plugin" || FAILURES+=("plugin $plugin")
 }
 
