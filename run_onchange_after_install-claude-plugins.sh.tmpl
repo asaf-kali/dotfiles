@@ -1,0 +1,43 @@
+#!/bin/bash
+# Adds the marketplaces and installs the plugins listed in .chezmoidata/claude_plugins.yaml
+# into Claude Code, on any machine where the `claude` CLI is present. Skips otherwise.
+#
+# Each repo is first probed with `git ls-remote` (ssh, then https, never prompting), so a
+# machine without git access to it skips that plugin with a warning instead of hanging or
+# failing. A failed add/install is collected and reported at the end; other plugins still run.
+#
+# run_onchange_: reruns on `chezmoi apply` whenever the rendered plugin list changes.
+set -uo pipefail
+
+if ! command -v claude >/dev/null 2>&1; then
+    echo "== claude plugins: skipped (claude not installed) =="
+    exit 0
+fi
+
+FAILURES=()
+
+can_reach() {
+    local repo="$1"
+    GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND="ssh -o BatchMode=yes" \
+        git ls-remote --exit-code "git@github.com:${repo}.git" HEAD >/dev/null 2>&1 ||
+        GIT_TERMINAL_PROMPT=0 git ls-remote --exit-code "https://github.com/${repo}.git" HEAD >/dev/null 2>&1
+}
+
+install_plugin() {
+    local repo="$1" plugin="$2"
+    if ! can_reach "$repo"; then
+        echo "WARNING: no git access to $repo, skipping $plugin" >&2
+        return
+    fi
+    claude plugin marketplace add "$repo" || { FAILURES+=("marketplace $repo"); return; }
+    claude plugin install "$plugin" || FAILURES+=("plugin $plugin")
+}
+
+{{ range .claude_plugins -}}
+install_plugin {{ .repo | quote }} {{ .plugin | quote }}
+{{ end }}
+if [ "${#FAILURES[@]}" -gt 0 ]; then
+    echo "== claude plugins: failed: ${FAILURES[*]} ==" >&2
+    exit 1
+fi
+echo "== claude plugins: done =="

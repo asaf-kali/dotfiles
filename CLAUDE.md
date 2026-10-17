@@ -85,12 +85,17 @@ is already in the post-install state, so it only exercises the no-op path.
   `statusLine` at `uv run --quiet --script ~/.claude/statusline.py`. No-ops without the `claude` CLI
   or `python3`; doesn't need `uv` yet, since it runs before install-packages. Its own hash embeds a
   `sha256sum` of the statusline script (chezmoi's `include` func), so editing that script reruns this.
+- `run_onchange_after_install-claude-plugins.sh.tmpl` — adds each marketplace and installs each plugin
+  from `.chezmoidata/claude_plugins.yaml` (`repo` + `plugin@marketplace`) via the `claude` CLI. No-ops
+  without `claude`. A repo is probed with `git ls-remote` (ssh, then https, no prompts) first; no
+  access means that plugin is skipped with a warning. Re-adding/installing an existing one is a no-op.
 - `.chezmoiignore` — keeps repo-only docs (this file, `README.md`) out of `$HOME`; root files without a
   `dot_`/`run_` prefix would otherwise land there verbatim.
 
 ## Conventions
 
 - Add a package: put it under the right key in `.chezmoidata/packages.yaml`, then apply.
+- Add a Claude Code plugin: append `repo` + `plugin` to `.chezmoidata/claude_plugins.yaml`, then apply.
 - Change the update schedule: edit `.chezmoidata/auto_update.yaml` (hours are 24h machine-local), apply.
 - Scripts use `set -uo pipefail` (not `-e`) plus a manual `FAILURES` array on purpose, so one failed
   package or unit doesn't abort the rest.

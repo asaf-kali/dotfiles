@@ -1,0 +1,6 @@
+# Claude Code plugins installed by run_onchange_after_install-claude-plugins.sh.tmpl
+# Edit freely — changing this file re-triggers install on `chezmoi apply`.
+# `repo` is the GitHub marketplace (owner/name); `plugin` is <plugin>@<marketplace name>.
+claude_plugins:
+  - repo: JuliusBrussee/caveman
+    plugin: caveman@caveman
