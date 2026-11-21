@@ -81,6 +81,11 @@ is already in the post-install state, so it only exercises the no-op path.
 - `dot_claude/executable_statusline.py` — source of truth for `~/.claude/statusline.py`: a stdlib-only
   uv script (PEP 723 header) printing a titled 2-row table with aligned columns: model | context
   bar | folder, then effort | session bar | git branch + status.
+- `~/.claude/CLAUDE.md` is machine-local on purpose: this repo doesn't create or change it. Shared
+  Claude rules live in the kaliclaude plugin's skills (repo `asaf-kali/kali-agent-rules`). The one
+  exception is `run_once_after_remove-old-claude-md-symlink.sh`, a migration that deletes the old
+  hand-made symlink to `.../agent-rules/python.md` (stale since those rules moved into the plugin).
+  It only ever removes that exact symlink, never a regular file or a link pointing anywhere else.
 - `dot_claude/modify_settings.json` + `.chezmoidata/claude.yaml` — Claude Code user settings. Claude
   Code writes `~/.claude/settings.json` itself, so chezmoi doesn't own the file: this `modify_`
   template (marked `chezmoi:modify-template`) reads the current file on `.chezmoi.stdin` and merges
