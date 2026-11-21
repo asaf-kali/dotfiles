@@ -92,6 +92,8 @@ is already in the post-install state, so it only exercises the no-op path.
   marketplace's source and `enabledPlugins` turns plugins on. At startup Claude Code clones a declared
   marketplace it doesn't have yet and installs enabled plugins that aren't cached, in the background.
   A marketplace the machine can't reach shows as an error under `/plugin` instead of failing the apply.
+  Each marketplace sets `autoUpdate: true`: third-party marketplaces default to off, which left
+  plugins stale until someone ran `claude plugin marketplace update` by hand.
 - `.chezmoiignore` — keeps repo-only docs (this file, `README.md`) out of `$HOME`; root files without a
   `dot_`/`run_` prefix would otherwise land there verbatim.
 

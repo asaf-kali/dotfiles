@@ -19,10 +19,13 @@ claude_settings:
     type: command
     command: uv run --quiet --script ~/.claude/statusline.py
   # Plugins: Claude Code clones each declared marketplace and installs each enabled plugin at startup.
+  # `autoUpdate`: third-party marketplaces default to off, so their plugins would never update by
+  # themselves. A value here also beats the `/plugin` toggle stored in known_marketplaces.json.
   extraKnownMarketplaces:
     kali-marketplace:
       source:
         source: github
         repo: asaf-kali/kali-agent-rules
+      autoUpdate: true
   enabledPlugins:
     kaliclaude@kali-marketplace: true
