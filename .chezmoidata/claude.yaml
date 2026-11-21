@@ -1,0 +1,20 @@
+# Claude Code user settings, merged into ~/.claude/settings.json by dot_claude/modify_settings.json.
+# Keys listed here win over the file on every `chezmoi apply`; keys not listed (anything Claude Code
+# or you set by hand) are kept. Maps merge one level deep (e.g. one `env` var, one `enabledPlugins`
+# entry); everything below that, lists included, is replaced whole.
+#
+# Keep this to settings every machine should share. Machine- or model-specific ones (allow lists,
+# per-model effort, skill overrides, UI toggles) stay local.
+claude_settings:
+  env:
+    CLAUDE_AUTOCOMPACT_PCT_OVERRIDE: "30"
+  autoCompactEnabled: true
+  effortLevel: high
+  # Only `defaultMode`: `permissions` merges one level deep, so each machine's `allow` list stays its own.
+  permissions:
+    defaultMode: auto
+  # Literal `~`: Claude Code runs the command through a shell, which expands it, so the file stays
+  # free of machine-specific home paths.
+  statusLine:
+    type: command
+    command: uv run --quiet --script ~/.claude/statusline.py
