@@ -18,3 +18,11 @@ claude_settings:
   statusLine:
     type: command
     command: uv run --quiet --script ~/.claude/statusline.py
+  # Plugins: Claude Code clones each declared marketplace and installs each enabled plugin at startup.
+  extraKnownMarketplaces:
+    kali-marketplace:
+      source:
+        source: github
+        repo: asaf-kali/kali-agent-rules
+  enabledPlugins:
+    kaliclaude@kali-marketplace: true

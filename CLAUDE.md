@@ -88,19 +88,19 @@ is already in the post-install state, so it only exercises the no-op path.
   one level deep (one `env` var, one `enabledPlugins` entry); lists and deeper values are replaced
   whole. It isn't sprig's `mergeOverwrite`, which skips `false` values. `statusLine` lives here too.
   Dropping a key from the data stops managing it but leaves it in the file.
-- `run_onchange_after_install-claude-plugins.sh.tmpl` — adds each marketplace and installs each plugin
-  from `.chezmoidata/claude_plugins.yaml` (`repo` + `plugin@marketplace`) via the `claude` CLI. No-ops
-  without `claude`. A repo is probed with `git ls-remote` (ssh, then https, no prompts) first; no
-  access means that plugin is skipped with a warning. Re-adding/installing an existing one is a no-op.
-  A marketplace already named in `settings.json`'s `extraKnownMarketplaces` is added from that declared
-  source instead (the CLI refuses any other), so a machine's own entry wins over `repo`.
+  Plugins are declared there too, not installed by a script: `extraKnownMarketplaces` names each
+  marketplace's source and `enabledPlugins` turns plugins on. At startup Claude Code clones a declared
+  marketplace it doesn't have yet and installs enabled plugins that aren't cached, in the background.
+  A marketplace the machine can't reach shows as an error under `/plugin` instead of failing the apply.
 - `.chezmoiignore` — keeps repo-only docs (this file, `README.md`) out of `$HOME`; root files without a
   `dot_`/`run_` prefix would otherwise land there verbatim.
 
 ## Conventions
 
 - Add a package: put it under the right key in `.chezmoidata/packages.yaml`, then apply.
-- Add a Claude Code plugin: append `repo` + `plugin` to `.chezmoidata/claude_plugins.yaml`, then apply.
+- Add a Claude Code plugin: add its marketplace under `extraKnownMarketplaces` (if new) and
+  `<plugin>@<marketplace>: true` under `enabledPlugins` in `.chezmoidata/claude.yaml`, then apply. The
+  next Claude Code start installs it.
 - Change a Claude Code setting for every machine: edit `claude_settings` in `.chezmoidata/claude.yaml`,
   then apply. A setting changed through Claude Code's own UI only lands on that machine, and is
   overwritten on the next apply if the key is listed there.
