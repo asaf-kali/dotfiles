@@ -2,7 +2,11 @@
 # Sourced from both ~/.bashrc and ~/.zshrc.
 
 # ---- PATH ----
-export PATH="$HOME/.local/bin:/snap/bin:$HOME/projects/kali-agent-rules/plugins/kaliclaude/scripts:$PATH"
+# kaliclaude scripts come from Claude Code's own clone of the plugin marketplace, which exists on
+# every machine with the plugin installed and stays current through the marketplace's autoUpdate.
+KALICLAUDE_SCRIPTS="$HOME/.claude/plugins/marketplaces/kali-marketplace/plugins/kaliclaude/scripts"
+export PATH="$HOME/.local/bin:/snap/bin:$KALICLAUDE_SCRIPTS:$PATH"
+unset KALICLAUDE_SCRIPTS
 
 # ---- Aliases (portable) ----
 alias wip='git add . && git status && git commit -m "Auto commit"'
