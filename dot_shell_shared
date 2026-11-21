@@ -2,7 +2,7 @@
 # Sourced from both ~/.bashrc and ~/.zshrc.
 
 # ---- PATH ----
-export PATH="$HOME/.local/bin:/snap/bin:$HOME/projects/agent-rules/scripts:$PATH"
+export PATH="$HOME/.local/bin:/snap/bin:$HOME/projects/kali-agent-rules/plugins/kaliclaude/scripts:$PATH"
 
 # ---- Aliases (portable) ----
 alias wip='git add . && git status && git commit -m "Auto commit"'
