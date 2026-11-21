@@ -1,0 +1,32 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /*
+  Merges .claude_settings (.chezmoidata/claude.yaml) into ~/.claude/settings.json, which Claude Code
+  also writes. The current file arrives on .chezmoi.stdin; keys from the data win, all others are
+  kept. A map value merges one level deep, so one `env` var or `enabledPlugins` entry can be managed
+  without owning the whole map. A missing or empty file starts from `{}`.
+
+  When the merge changes no value, the file is returned byte for byte: the merged output has sorted
+  keys and chezmoi's formatting, while Claude Code writes its own key order, so re-rendering an
+  unchanged file would show up as a diff on every apply.
+*/ -}}
+{{- $original := dict -}}
+{{- $settings := dict -}}
+{{- if .chezmoi.stdin | trim -}}
+{{-   $original = fromJson .chezmoi.stdin -}}
+{{-   $settings = fromJson .chezmoi.stdin -}}
+{{- end -}}
+{{- range $key, $value := .claude_settings -}}
+{{-   $existing := get $settings $key -}}
+{{-   if and (kindIs "map" $value) (kindIs "map" $existing) -}}
+{{-     range $subKey, $subValue := $value -}}
+{{-       $_ := set $existing $subKey $subValue -}}
+{{-     end -}}
+{{-   else -}}
+{{-     $_ := set $settings $key $value -}}
+{{-   end -}}
+{{- end -}}
+{{- if and (.chezmoi.stdin | trim) (eq (toJson $settings) (toJson $original)) -}}
+{{-   .chezmoi.stdin -}}
+{{- else -}}
+{{-   toPrettyJson "    " $settings }}
+{{  end -}}

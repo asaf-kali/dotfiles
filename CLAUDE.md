@@ -81,23 +81,36 @@ is already in the post-install state, so it only exercises the no-op path.
 - `dot_claude/executable_statusline.py` — source of truth for `~/.claude/statusline.py`: a stdlib-only
   uv script (PEP 723 header) printing a titled 2-row table with aligned columns: model | context
   bar | folder, then effort | session bar | git branch + status.
-- `run_onchange_after_install-claude-statusline.sh.tmpl` — points `~/.claude/settings.json`'s
-  `statusLine` at `uv run --quiet --script ~/.claude/statusline.py`. No-ops without the `claude` CLI
-  or `python3`; doesn't need `uv` yet, since it runs before install-packages. Its own hash embeds a
-  `sha256sum` of the statusline script (chezmoi's `include` func), so editing that script reruns this.
-- `run_onchange_after_install-claude-plugins.sh.tmpl` — adds each marketplace and installs each plugin
-  from `.chezmoidata/claude_plugins.yaml` (`repo` + `plugin@marketplace`) via the `claude` CLI. No-ops
-  without `claude`. A repo is probed with `git ls-remote` (ssh, then https, no prompts) first; no
-  access means that plugin is skipped with a warning. Re-adding/installing an existing one is a no-op.
-  A marketplace already named in `settings.json`'s `extraKnownMarketplaces` is added from that declared
-  source instead (the CLI refuses any other), so a machine's own entry wins over `repo`.
+- `~/.claude/CLAUDE.md` is machine-local on purpose: this repo doesn't create or change it. Shared
+  Claude rules live in the kaliclaude plugin's skills (repo `asaf-kali/kali-agent-rules`). The one
+  exception is `run_once_after_remove-old-claude-md-symlink.sh`, a migration that deletes the old
+  hand-made symlink to `.../agent-rules/python.md` (stale since those rules moved into the plugin).
+  It only ever removes that exact symlink, never a regular file or a link pointing anywhere else.
+- `dot_claude/modify_settings.json` + `.chezmoidata/claude.yaml` — Claude Code user settings. Claude
+  Code writes `~/.claude/settings.json` itself, so chezmoi doesn't own the file: this `modify_`
+  template (marked `chezmoi:modify-template`) reads the current file on `.chezmoi.stdin` and merges
+  `claude_settings` over it. Listed keys win on every apply; unlisted keys are kept. Map values merge
+  one level deep (one `env` var, one `enabledPlugins` entry); lists and deeper values are replaced
+  whole. It isn't sprig's `mergeOverwrite`, which skips `false` values. `statusLine` lives here too.
+  Dropping a key from the data stops managing it but leaves it in the file.
+  Plugins are declared there too, not installed by a script: `extraKnownMarketplaces` names each
+  marketplace's source and `enabledPlugins` turns plugins on. At startup Claude Code clones a declared
+  marketplace it doesn't have yet and installs enabled plugins that aren't cached, in the background.
+  A marketplace the machine can't reach shows as an error under `/plugin` instead of failing the apply.
+  Each marketplace sets `autoUpdate: true`: third-party marketplaces default to off, which left
+  plugins stale until someone ran `claude plugin marketplace update` by hand.
 - `.chezmoiignore` — keeps repo-only docs (this file, `README.md`) out of `$HOME`; root files without a
   `dot_`/`run_` prefix would otherwise land there verbatim.
 
 ## Conventions
 
 - Add a package: put it under the right key in `.chezmoidata/packages.yaml`, then apply.
-- Add a Claude Code plugin: append `repo` + `plugin` to `.chezmoidata/claude_plugins.yaml`, then apply.
+- Add a Claude Code plugin: add its marketplace under `extraKnownMarketplaces` (if new) and
+  `<plugin>@<marketplace>: true` under `enabledPlugins` in `.chezmoidata/claude.yaml`, then apply. The
+  next Claude Code start installs it.
+- Change a Claude Code setting for every machine: edit `claude_settings` in `.chezmoidata/claude.yaml`,
+  then apply. A setting changed through Claude Code's own UI only lands on that machine, and is
+  overwritten on the next apply if the key is listed there.
 - Change the update schedule: edit `.chezmoidata/auto_update.yaml` (hours are 24h machine-local), apply.
 - Scripts use `set -uo pipefail` (not `-e`) plus a manual `FAILURES` array on purpose, so one failed
   package or unit doesn't abort the rest.
