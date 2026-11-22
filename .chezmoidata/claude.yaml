@@ -7,7 +7,7 @@
 # per-model effort, skill overrides, UI toggles) stay local.
 claude_settings:
   env:
-    CLAUDE_AUTOCOMPACT_PCT_OVERRIDE: "30"
+    CLAUDE_AUTOCOMPACT_PCT_OVERRIDE: "55"
   autoCompactEnabled: true
   effortLevel: high
   # Only `defaultMode`: `permissions` merges one level deep, so each machine's `allow` list stays its own.
