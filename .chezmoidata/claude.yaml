@@ -6,8 +6,7 @@
 # Keep this to settings every machine should share. Machine- or model-specific ones (allow lists,
 # per-model effort, skill overrides, UI toggles) stay local.
 claude_settings:
-  env:
-    CLAUDE_AUTOCOMPACT_PCT_OVERRIDE: "55"
+  autoCompactWindow: 300000
   autoCompactEnabled: true
   effortLevel: high
   # Only `defaultMode`: `permissions` merges one level deep, so each machine's `allow` list stays its own.
